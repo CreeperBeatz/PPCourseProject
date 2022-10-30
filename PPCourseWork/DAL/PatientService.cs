@@ -13,6 +13,9 @@ namespace PPCourseWork.DAL
         public PatientService(DatabaseContext databaseContext)
         {
             _databaseContext = databaseContext;
+
+            //Make a dummy request to initialize DB Connection
+            _databaseContext.Patients.Any();
         }
 
         public async Task<int> AddPatient(Patient patient)

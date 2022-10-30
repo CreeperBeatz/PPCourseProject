@@ -16,11 +16,11 @@
                 <DockPanel VerticalAlignment="Stretch" Height="Auto">
                     <StackPanel Orientation="Vertical" DockPanel.Dock="Left">
                         <Label Content="Search by ID"/>
-                        <TextBox Name="IDSearchBox"/>
+                        <TextBox Name="IDSearchBox" Text="{Binding SearchID}" PreviewTextInput="IDSearchBox_PreviewTextInput"/>
                         <Button Content="Search by ID" Command="{Binding SearchByIdCommand}"/>
                         <Line Stroke="Black" StrokeThickness="3"/>
                         <Label Content="Search by Name"/>
-                        <TextBox Name="NameSearchBox"/>
+                        <TextBox Name="NameSearchBox" Text="{Binding SearchName}"/>
                         <Button Content="Search by Name" Command="{Binding SearchByNameCommand}"/>
                         <Line Stroke="Black" StrokeThickness="3"/>
                         <Button Content="Load All Patients" Command="{Binding LoadAllPatientsCommand}"/>
@@ -36,26 +36,50 @@
                     </DataGrid>
                 </DockPanel>
             </TabItem>
-            <TabItem Header="Analisys" >
-                
+            <TabItem Header="Analisys">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="16*"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20*"/>
+                        <ColumnDefinition Width="60*"/>
+                        <ColumnDefinition Width="20*"/>
+                    </Grid.ColumnDefinitions>
+                    <DataGrid ItemsSource="{Binding AnalisysItems}" Grid.Row="0" Grid.Column="1" AutoGenerateColumns="False">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Year of Birth" Binding="{Binding Year}" Width="1*" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="Number of Cases" Binding="{Binding Cases}" Width="1*" IsReadOnly="True"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <Button Content="Make Analisys" Command="{Binding MakeAnalisysCommand}" Grid.Row="1" Grid.Column="1" Height="20"/>
+                </Grid>
             </TabItem>
             <TabItem Header="Import / Export CSV" >
 
             </TabItem>
             <TabItem Header="Add / Delete Patients" >
-                <StackPanel Margin="200,0,200,0">
-                    <Label Content="Name"/>
-                    <TextBox x:Name="AddPatientNameTextBox" Text="{Binding AddName}"/>
-                    <Label Content="Birth Date"/>
-                    <DatePicker SelectedDate="{Binding AddBirthDate}"/>
-                    <Label Content="Is Case"/>
-                    <CheckBox Margin="5,0,0,0" IsChecked="{Binding AddIsCase}"/>
-                    <Button Content="Add Patient" Command="{Binding AddUserCommand}"/>
-                    <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>
-                    <Label Content="Delete Patient by ID"/>
-                    <TextBox Text="{Binding DelID}"/>
-                    <Button Content="Delete Patient" Command="{Binding DeleteUserCommand}"/>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="20*"/>
+                        <ColumnDefinition Width="60*"/>
+                        <ColumnDefinition Width="20*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="1">
+                        <Label Content="Name"/>
+                        <TextBox x:Name="AddPatientNameTextBox" Text="{Binding AddName}"/>
+                        <Label Content="Birth Date"/>
+                        <DatePicker SelectedDate="{Binding AddBirthDate}"/>
+                        <Label Content="Is Case"/>
+                        <CheckBox Margin="5,0,0,0" IsChecked="{Binding AddIsCase}"/>
+                        <Button Content="Add Patient" Command="{Binding AddUserCommand}"/>
+                        <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>
+                        <Label Content="Delete Patient by ID"/>
+                        <TextBox Text="{Binding DelID}"/>
+                        <Button Content="Delete Patient" Command="{Binding DeleteUserCommand}"/>
+                    </StackPanel>
+                </Grid>
             </TabItem>
         </TabControl>
     </Grid>

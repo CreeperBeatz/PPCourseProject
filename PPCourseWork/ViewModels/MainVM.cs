@@ -7,24 +7,26 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using PPCourseWork.Core;
 using PPCourseWork.Model;
-using PPCourseWork.ViewModels.Controls;
 using PPCourseWork.DAL;
 using System.Threading;
 using AsyncAwaitBestPractices.MVVM;
+using System.Windows;
 
 namespace PPCourseWork.ViewModels
 {
     public class MainVM : ObservableObject
     {
         #region CommandDefinitions
-        public ICommand SearchByIdCommand { get; set; }
-        public ICommand SearchByNameCommand { get; set; }
+        public IAsyncCommand SearchByIdCommand { get; set; }
+        public IAsyncCommand SearchByNameCommand { get; set; }
         public IAsyncCommand LoadAllPatientsCommand { get; private set; }
-        public ICommand MakeAnalisysCommand { get; set; }
-        public ICommand LoadCSVCommand { get; set; }
-        public ICommand ExportCSVCommand { get; set; }
-        public ICommand AddUserCommand { get; set; }
-        public ICommand DeleteUserCommand { get; set; }
+        public IAsyncCommand MakeAnalisysCommand { get; set; }
+        public IAsyncCommand LoadCSVCommand { get; set; }
+        public IAsyncCommand ExportCSVCommand { get; set; }
+        public IAsyncCommand ChoosePathCommand { get; set; }
+        public IAsyncCommand AddUserCommand { get; set; }
+        public IAsyncCommand DeleteUserCommand { get; set; }
+        public IAsyncCommand PurgeDBCommand { get; set; }
         #endregion
 
         #region VariableDefinitions
@@ -38,6 +40,12 @@ namespace PPCourseWork.ViewModels
         private DateTime _addBirthDate;
         private bool _addIsCase;
         private int _delID;
+
+        //Analisys screen
+        private ObservableCollection<AnalisysItem> _analisysItems;
+
+        //Import Export Screen
+        private string _path;
 
         //DB
         private PatientService _patientService;
@@ -55,35 +63,58 @@ namespace PPCourseWork.ViewModels
         public bool AddIsCase { get { return _addIsCase; } set { _addIsCase = value; OnPropertyChanged(); } }
         public int DelID { get { return _delID; }  set { _delID = value; OnPropertyChanged(); } }
 
-        //Async 
+        //Analisys screen
+        public ObservableCollection<AnalisysItem> AnalisysItems { get { return _analisysItems; } set { _analisysItems = value; OnPropertyChanged(); } }
+
+        //CSV Import Expor screen
+        public string Path { get { return _path; } set { _path = value; OnPropertyChanged(); } }
 
         #endregion
         public MainVM()
         {
             this._patientService = new PatientService(new DatabaseContext());
             this.PatientSearchResults = new ObservableCollection<Patient>();
-            this.SearchByIdCommand = new SearchByIDCommand(this);
-            this.SearchByNameCommand = new SearchByNameCommand(this);
+
+            this.SearchByIdCommand = new AsyncCommand(SearchByID);
+            this.SearchByNameCommand = new AsyncCommand(SearchByName);
             this.LoadAllPatientsCommand = new AsyncCommand(LoadAllPatients);
-            this.MakeAnalisysCommand = new MakeAnalisysCommand(this);
-            this.AddUserCommand = new AddUserCommand(this);
-            this.DeleteUserCommand = new DeleteUserCommand(this);
-            this.LoadCSVCommand = new LoadCSVCommand(this);
-            this.ExportCSVCommand = new ExportCSVCommand(this);
+            this.MakeAnalisysCommand = new AsyncCommand(MakeAnalisys);
+            this.AddUserCommand = new AsyncCommand(AddUser);
+            this.DeleteUserCommand = new AsyncCommand(DeleteUser);
+            this.LoadCSVCommand = new AsyncCommand(LoadCSV);
+            this.ExportCSVCommand = new AsyncCommand(ExportCSV);
+            this.PurgeDBCommand = new AsyncCommand(PurgeDB);
+            this.ChoosePathCommand = new AsyncCommand(ChoosePath);
         }
 
         #region Commands
         public async Task SearchByID()
         {
-            //test
-            Patient patient1 = new Patient("David", new DateTime(2000, 4, 1), true);
-            Patient patient2 = new Patient("Lucy", new DateTime(2001, 5, 23), false);
-            PatientSearchResults.Add(patient1);
-            PatientSearchResults.Add(patient2);
+            try
+            {
+                var patient_task = _patientService.GetPatientByIDAsync(SearchID);
+                PatientSearchResults = new ObservableCollection<Patient>();
+                Patient patient = await patient_task;
+                if (patient != null)
+                {
+                    PatientSearchResults.Add(patient);
+                }
+            } catch (Exception ex)
+            {
+                MessageBox.Show("Error occured!");
+            }
         }
         public async Task SearchByName()
         {
+            try
+            {
+                var patient_task = _patientService.GetPatientsByNameAsync(SearchName);
+                PatientSearchResults = new ObservableCollection<Patient>(await patient_task);
+            }
+            catch
+            {
 
+            }
         }
         public async Task LoadAllPatients()
         {
@@ -107,7 +138,29 @@ namespace PPCourseWork.ViewModels
         }
         public async Task MakeAnalisys()
         {
+            this.AnalisysItems = new ObservableCollection<AnalisysItem>();
 
+            //TODO Separate into Get 100 records DB and pass task to AddCase task
+            foreach (var patient in await this._patientService.GetAllPatientsAsync())
+            {
+                bool year_exists = false;
+                for(int index = 0; index < AnalisysItems.Count; index++)
+                {
+                    if (AnalisysItems[index].Year == patient.BirthDate.Year)
+                    {
+                        AnalisysItems[index].Cases++;
+                        year_exists = true;
+                        break;
+                    }
+                }
+                if (!year_exists) 
+                {
+                    //TODO when into separate task, add to local array
+                    AnalisysItems.Add(new AnalisysItem(patient.BirthDate.Year));
+                }
+            }
+
+            //TODO Concat all Tasks' results into AnalisysItems
         }
         public async Task ExportCSV()
         {
@@ -117,6 +170,15 @@ namespace PPCourseWork.ViewModels
         {
 
         }
+        public async Task PurgeDB()
+        {
+
+        }
+        public async Task ChoosePath()
+        {
+
+        }
         #endregion
+
     }
 }
