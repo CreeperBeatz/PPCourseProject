@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using System.Windows.Forms;
 using PPCourseWork.Core;
 using PPCourseWork.Model;
 using PPCourseWork.DAL;
@@ -66,7 +67,7 @@ namespace PPCourseWork.ViewModels
         //Analisys screen
         public ObservableCollection<AnalisysItem> AnalisysItems { get { return _analisysItems; } set { _analisysItems = value; OnPropertyChanged(); } }
 
-        //CSV Import Expor screen
+        //CSV Import Export screen
         public string Path { get { return _path; } set { _path = value; OnPropertyChanged(); } }
 
         #endregion
@@ -85,6 +86,9 @@ namespace PPCourseWork.ViewModels
             this.ExportCSVCommand = new AsyncCommand(ExportCSV);
             this.PurgeDBCommand = new AsyncCommand(PurgeDB);
             this.ChoosePathCommand = new AsyncCommand(ChoosePath);
+
+            // Default birthdate to 01.01.2000, so it's not 01.01.0001
+            this.AddBirthDate = new DateTime(2000, 1, 1);
         }
 
         #region Commands
@@ -176,7 +180,10 @@ namespace PPCourseWork.ViewModels
         }
         public async Task ChoosePath()
         {
-
+            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            {
+                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+            }
         }
         #endregion
 
