@@ -64,18 +64,28 @@
                         <ColumnDefinition Width="20*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="1">
-                        <Label Content="Path" Grid.Column="1" HorizontalAlignment="Center"/>
-                        <TextBox Margin="5" Text="{Binding Path}"/>
-                        <Button Content="Choose Path" Margin="5" Command="{Binding ChoosePathCommand}"/>
-                        <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>
+                        <Label Content="Load CSV File Path" Grid.Column="1" HorizontalAlignment="Center"/>
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*"/>
+                                <ColumnDefinition Width="8*"/>
                                 <ColumnDefinition Width="1*"/>
                             </Grid.ColumnDefinitions>
-                            <Button Content="Load CSV" Grid.Column="0" Margin="5" Command="{Binding LoadCSVCommand}"/>
-                            <Button Content="Export CSV" Grid.Column="1" Margin="5" Command="{Binding ExportCSVCommand}"/>
+                            <TextBox Margin="5" Text="{Binding LoadPath}" Grid.Column="0"/>
+                            <Button Content="Choose File" Margin="5" Command="{Binding ChooseLoadFileCommand}" Grid.Column="1"/>
                         </Grid>
+                        <Button Content="Load CSV" Margin="5" Command="{Binding LoadCSVCommand}"/>
+                        <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>
+                        <Label Content="Export CSV Folder Path" Grid.Column="1" HorizontalAlignment="Center"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="8*"/>
+                                <ColumnDefinition Width="1*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Margin="5" Text="{Binding ExportPath}" Grid.Column="0"/>
+                            <Button Content="Choose File" Margin="5" Command="{Binding ChooseExportFolderCommand}" Grid.Column="1"/>
+                        </Grid>
+                        <Button Content="Export CSV" Margin="5" Command="{Binding ExportCSVCommand}"/>
+
                         <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>
                         <Button Content="Purge Database" Margin="5" Foreground="red" Command="{Binding PurgeDBCommand}"/>
                         <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>

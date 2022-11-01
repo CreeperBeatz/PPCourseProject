@@ -24,7 +24,8 @@ namespace PPCourseWork.ViewModels
         public IAsyncCommand MakeAnalisysCommand { get; set; }
         public IAsyncCommand LoadCSVCommand { get; set; }
         public IAsyncCommand ExportCSVCommand { get; set; }
-        public IAsyncCommand ChoosePathCommand { get; set; }
+        public IAsyncCommand ChooseExportFolderCommand { get; set; }
+        public IAsyncCommand ChooseLoadFileCommand { get; set; }
         public IAsyncCommand AddUserCommand { get; set; }
         public IAsyncCommand DeleteUserCommand { get; set; }
         public IAsyncCommand PurgeDBCommand { get; set; }
@@ -46,7 +47,8 @@ namespace PPCourseWork.ViewModels
         private ObservableCollection<AnalisysItem> _analisysItems;
 
         //Import Export Screen
-        private string _path;
+        private string _loadPath;
+        private string _exportPath;
 
         //DB
         private PatientService _patientService;
@@ -68,8 +70,8 @@ namespace PPCourseWork.ViewModels
         public ObservableCollection<AnalisysItem> AnalisysItems { get { return _analisysItems; } set { _analisysItems = value; OnPropertyChanged(); } }
 
         //CSV Import Export screen
-        public string Path { get { return _path; } set { _path = value; OnPropertyChanged(); } }
-
+        public string LoadPath { get { return _loadPath; } set { _loadPath = value; OnPropertyChanged(); } }
+        public string ExportPath { get { return _exportPath; } set { _exportPath = value; OnPropertyChanged(); } }
         #endregion
         public MainVM()
         {
@@ -85,7 +87,8 @@ namespace PPCourseWork.ViewModels
             this.LoadCSVCommand = new AsyncCommand(LoadCSV);
             this.ExportCSVCommand = new AsyncCommand(ExportCSV);
             this.PurgeDBCommand = new AsyncCommand(PurgeDB);
-            this.ChoosePathCommand = new AsyncCommand(ChoosePath);
+            this.ChooseExportFolderCommand = new AsyncCommand(ChooseExportFolder);
+            this.ChooseLoadFileCommand = new AsyncCommand(ChooseLoadFile);
 
             // Default birthdate to 01.01.2000, so it's not 01.01.0001
             this.AddBirthDate = new DateTime(2000, 1, 1);
@@ -178,12 +181,28 @@ namespace PPCourseWork.ViewModels
         {
 
         }
-        public async Task ChoosePath()
+        public async Task ChooseLoadFile()
+        {
+            using (var dialog = new System.Windows.Forms.OpenFileDialog())
+            {
+                dialog.Filter = "CSV files (*.csv)|*.csv";
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    LoadPath = dialog.FileName;
+                }
+            }
+        }
+
+        public async Task ChooseExportFolder()
         {
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
-                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-                Path = result.ToString();
+                var result = dialog.ShowDialog();
+                if (result == System.Windows.Forms.DialogResult.OK)
+                {
+                    ExportPath = dialog.SelectedPath;
+                }
             }
         }
         #endregion
