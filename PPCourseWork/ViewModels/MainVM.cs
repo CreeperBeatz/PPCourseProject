@@ -105,7 +105,7 @@ namespace PPCourseWork.ViewModels
                 }
             } catch (Exception ex)
             {
-                MessageBox.Show("Error occured!");
+                System.Windows.MessageBox.Show(ex.Message);
             }
         }
         public async Task SearchByName()
@@ -183,6 +183,7 @@ namespace PPCourseWork.ViewModels
             using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
             {
                 System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                Path = result.ToString();
             }
         }
         #endregion
