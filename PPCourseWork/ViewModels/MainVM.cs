@@ -184,6 +184,7 @@ namespace PPCourseWork.ViewModels
                 
                 var patients = await this._patientService.GetAllPatientsAsync();
 
+                //TODO change delimiter from hardcoded
                 string csv = String.Join("\n", await patients.Select(x => x.ToString(',')).ToAsyncEnumerable().ToListAsync());
                 var encodedText = Encoding.UTF8.GetBytes(csv);
 
@@ -203,7 +204,25 @@ namespace PPCourseWork.ViewModels
         {
             if (File.Exists(LoadPath))
             {
-                // Load patiets
+                try
+                {
+                    List<Task> db_write_tasks = new List<Task>();
+                    using (StreamReader reader = File.OpenText(LoadPath))
+                    {
+                        string line;
+                        Patient patinent;
+                        while ((line = await reader.ReadLineAsync()) != null)
+                        {
+                            patinent = new Patient(line, ','); //TODO change delimiter from hardcoded
+                            db_write_tasks.Add(this._patientService.AddPatientAsync(patinent));
+                        }
+                    }
+                    await Task.WhenAll(db_write_tasks);
+                    System.Windows.MessageBox.Show("Import finished successfully!");
+                } catch (Exception ex)
+                {
+                    System.Windows.MessageBox.Show(ex.Message);
+                }
             } else
             {
                 System.Windows.MessageBox.Show("File Doesn't Exist!");

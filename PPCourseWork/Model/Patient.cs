@@ -42,6 +42,44 @@ namespace PPCourseWork.Model
             IsCase = isCase;
         }
 
+        public Patient(string csv_line, char delimiter)
+        {
+            try
+            {
+                string[] words = csv_line.Split(delimiter);
+
+                //validation
+                if (words.Length < 4)
+                {
+                    throw new FormatException("CSV has less fields than expected!");
+                }
+
+                for (int i = 0; i < words.Length; i++)
+                {
+                    switch (i)
+                    {
+                        case 0:
+                            ID = int.Parse(words[i]);
+                            break;
+                        case 1:
+                            Name = words[i];
+                            break;
+                        case 2:
+                            BirthDate = DateTime.Parse(words[i]);
+                            break;
+                        case 3:
+                            IsCase = bool.Parse(words[i]);
+                            break;
+                        default:
+                            throw new FormatException("CSV File has more fields than expected!");
+                    }
+                }
+            } catch (Exception ex)
+            {
+                throw new FormatException("CSV File not correctly formatted!" + ex.Message);
+            }
+        }
+
         public string ToString(char delimiter)
         {
             return ID.ToString() + delimiter + Name + delimiter 
