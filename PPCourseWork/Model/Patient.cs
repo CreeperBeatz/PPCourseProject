@@ -41,5 +41,11 @@ namespace PPCourseWork.Model
             BirthDate = birthDate;
             IsCase = isCase;
         }
+
+        public string ToString(char delimiter)
+        {
+            return ID.ToString() + delimiter + Name + delimiter 
+                + BirthDate.ToString() + delimiter + IsCase.ToString();
+        }
     }
 }

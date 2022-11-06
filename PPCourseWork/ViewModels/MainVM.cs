@@ -12,6 +12,7 @@ using PPCourseWork.DAL;
 using System.Threading;
 using AsyncAwaitBestPractices.MVVM;
 using System.Windows;
+using System.IO;
 
 namespace PPCourseWork.ViewModels
 {
@@ -171,15 +172,49 @@ namespace PPCourseWork.ViewModels
         }
         public async Task ExportCSV()
         {
+            if(Directory.Exists(ExportPath))
+            {
+                if (ExportPath[ExportPath.Length-1] != '\\')
+                {
+                    ExportPath += '\\';
+                }
+                string fileName = "PatientExport" + DateTime.Now.Year + "_" + DateTime.Now.Month
+                    + "_" + DateTime.Now.Day + "_" + DateTime.Now.Hour + "-" + DateTime.Now.Minute +
+                    "-" + DateTime.Now.Second + ".csv";
+                
+                var patients = await this._patientService.GetAllPatientsAsync();
 
+                string csv = String.Join("\n", await patients.Select(x => x.ToString(',')).ToAsyncEnumerable().ToListAsync());
+                var encodedText = Encoding.UTF8.GetBytes(csv);
+
+                using (FileStream sourceStream = new FileStream(ExportPath + fileName,
+                    FileMode.Append, FileAccess.Write, FileShare.None,
+                    bufferSize: 4096, useAsync: true))
+                {
+                    await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
+                    System.Windows.MessageBox.Show("Database exported");
+                };
+            } else
+            {
+                System.Windows.MessageBox.Show("Path doesn't exist!");
+            }
         }
         public async Task LoadCSV()
         {
-
+            if (File.Exists(LoadPath))
+            {
+                // Load patiets
+            } else
+            {
+                System.Windows.MessageBox.Show("File Doesn't Exist!");
+            }
         }
         public async Task PurgeDB()
         {
-
+            if(System.Windows.MessageBox.Show("Are you sure you want to delete ALL contents of the database?", "Irreversable action!", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                await this._patientService.PurgePatientsAsync();
+            }
         }
         public async Task ChooseLoadFile()
         {

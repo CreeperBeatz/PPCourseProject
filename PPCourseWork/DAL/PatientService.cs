@@ -66,5 +66,11 @@ namespace PPCourseWork.DAL
                 throw new KeyNotFoundException($"Patient with id: {id} doesn't exist!");
             }
         }
+        
+        public async Task<int> PurgePatientsAsync()
+        {
+            _databaseContext.Patients.RemoveRange(_databaseContext.Patients);
+            return await _databaseContext.SaveChangesAsync();
+        }
     }
 }
