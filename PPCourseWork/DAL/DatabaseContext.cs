@@ -17,5 +17,6 @@ namespace PPCourseWork.DAL
         }
 
         public DbSet<Patient> Patients { get; set; }
+
     }
 }

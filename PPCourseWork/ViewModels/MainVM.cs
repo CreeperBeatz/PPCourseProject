@@ -138,7 +138,7 @@ namespace PPCourseWork.ViewModels
         public async Task AddUser()
         {
             Patient patient = new Patient(AddName, AddBirthDate, AddIsCase);
-            await this._patientService.AddPatientAsync(patient);
+            await this._patientService.AddOrUpdatePatientAsync(patient);
         }
         public async Task DeleteUser()
         {
@@ -206,18 +206,25 @@ namespace PPCourseWork.ViewModels
             {
                 try
                 {
-                    List<Task> db_write_tasks = new List<Task>();
+                    List<Task> dbWriteTasks = new List<Task>();
                     using (StreamReader reader = File.OpenText(LoadPath))
                     {
                         string line;
-                        Patient patinent;
+                        Patient patient;
+                        var skipSameID = System.Windows.MessageBox.Show("Do you want to skip records with the same ID (Yes), " +
+                            "or modify them, if there are differences(No)", "Skip records", System.Windows.MessageBoxButton.YesNo);
+
                         while ((line = await reader.ReadLineAsync()) != null)
                         {
-                            patinent = new Patient(line, ','); //TODO change delimiter from hardcoded
-                            db_write_tasks.Add(this._patientService.AddPatientAsync(patinent));
+                            patient = new Patient(line, ','); //TODO change delimiter from hardcoded
+                            if (skipSameID == System.Windows.MessageBoxResult.Yes && await _patientService.PatientIdExistsAsync(patient.ID))
+                            {
+                                continue;
+                            }
+                            dbWriteTasks.Add(this._patientService.AddOrUpdatePatientAsync(patient, false));
                         }
                     }
-                    await Task.WhenAll(db_write_tasks);
+                    await Task.WhenAll(dbWriteTasks);
                     System.Windows.MessageBox.Show("Import finished successfully!");
                 } catch (Exception ex)
                 {
