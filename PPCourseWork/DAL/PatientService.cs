@@ -11,6 +11,7 @@ namespace PPCourseWork.DAL
     {
         private readonly DatabaseContext _databaseContext;
         private static System.Threading.SemaphoreSlim semaphoreSlim = new System.Threading.SemaphoreSlim(1, 1);
+        public static bool IsBisy { get { return semaphoreSlim.CurrentCount == 0; } }
         public PatientService(DatabaseContext databaseContext)
         {
             _databaseContext = databaseContext;
@@ -39,50 +40,73 @@ namespace PPCourseWork.DAL
 
         public async Task<Patient> GetPatientByIDAsync(int id)
         {
-            await semaphoreSlim.WaitAsync();
-            Patient result = await _databaseContext.Patients.FindAsync(id);
-            semaphoreSlim.Release();
-            return result;
+            try
+            {
+                await semaphoreSlim.WaitAsync();
+                return await _databaseContext.Patients.FindAsync(id);
+            }
+            finally { semaphoreSlim.Release(); }
         }
 
         public async Task<bool> PatientIdExistsAsync(int id)
         {
-            await semaphoreSlim.WaitAsync();
-            bool result = _databaseContext.Patients.Any(o => o.ID == id);
-            semaphoreSlim.Release();
-            return result;
+            try
+            {
+                await semaphoreSlim.WaitAsync();
+                return _databaseContext.Patients.Any(o => o.ID == id);
+            }
+            finally { semaphoreSlim.Release(); }
         }
 
         public async Task<IEnumerable<Patient>> GetPatientsByNameAsync(string name)
         {
-            await semaphoreSlim.WaitAsync();
-            var result = await _databaseContext.Patients.Where(x => x.Name == name).ToAsyncEnumerable().ToListAsync();
-            semaphoreSlim.Release();
-            return result;
+            try 
+            {
+                await semaphoreSlim.WaitAsync();
+                return await _databaseContext.Patients.Where(x => x.Name == name).ToAsyncEnumerable().ToListAsync();
+            }
+            finally { semaphoreSlim.Release(); }
         }
 
         public async Task<IEnumerable<Patient>> GetAllPatientsAsync()
         {
-            await semaphoreSlim.WaitAsync();
-            var result = await _databaseContext.Patients.ToAsyncEnumerable().ToListAsync();
-            semaphoreSlim.Release();
-            return result;
+            try
+            {
+                await semaphoreSlim.WaitAsync();
+                return await _databaseContext.Patients.ToAsyncEnumerable().ToListAsync();
+            }
+            finally { semaphoreSlim.Release(); }
         }
 
-        public async Task<int> AddOrUpdatePatientAsync(Patient patient, bool autoGenerateID = true)
+        public async Task<int> AddOrUpdatePatientAsync(Patient patient, bool generateId = true)
         {
-            await semaphoreSlim.WaitAsync();
-            int result;
-            using (var transaction = _databaseContext.Database.BeginTransaction()) {
-                if (!autoGenerateID) 
-                { 
-                    await _databaseContext.Database.ExecuteSqlCommandAsync("SET IDENTITY_INSERT [dbo].[Patients] ON");
-                }
-
+            try
+            {
+                await semaphoreSlim.WaitAsync();
                 var dbPatient = await _databaseContext.Patients.FindAsync(patient.ID);
                 if (dbPatient == null)
                 {
-                    _databaseContext.Patients.Add(patient);
+                    if (!generateId)
+                    {
+                        //Hack the EF since dbset doesn't support identity insert
+                        using (var transaction = _databaseContext.Database.BeginTransaction())
+                        {
+                            //Get current ident for restorement later
+                            int ident = Convert.ToInt32(_databaseContext.Database.SqlQuery<decimal>("SELECT IDENT_CURRENT('[dbo].[Patients]')").FirstOrDefault());
+                            //reseed ident to patient we want to insert
+                            await _databaseContext.Database.ExecuteSqlCommandAsync($"DBCC CHECKIDENT('[dbo].[Patients]', RESEED, {patient.ID - 1})");
+                            _databaseContext.Patients.Add(patient);
+                            //Save changes with current indent
+                            await _databaseContext.SaveChangesAsync();
+                            //reseed ident to previous state
+                            await _databaseContext.Database.ExecuteSqlCommandAsync($"DBCC CHECKIDENT('[dbo].[Patients]', RESEED, {ident})");
+                            transaction.Commit();
+                        }
+                    }
+                    else
+                    {
+                        _databaseContext.Patients.Add(patient);
+                    }
                 }
                 else
                 {
@@ -90,45 +114,77 @@ namespace PPCourseWork.DAL
                     dbPatient.BirthDate = patient.BirthDate;
                     dbPatient.IsCase = patient.IsCase;
                 }
-                try
-                {
-                    result = await _databaseContext.SaveChangesAsync();
-                } catch (Exception ex)
-                {
-                    result = -1;
-                }
-                if (!autoGenerateID) { await _databaseContext.Database.ExecuteSqlCommandAsync("SET IDENTITY_INSERT [dbo].[Patients] OFF"); }
-                transaction.Commit();
+                return await _databaseContext.SaveChangesAsync();
             }
-            semaphoreSlim.Release();
-            return result;
+            finally { semaphoreSlim.Release(); }
+        }
+
+        //When adding a patient, assign a custom ID, not DB Generated one
+        private async Task<int> IdentityInsertPatientAsync(Patient patient)
+        {
+            if (patient.ID == null)
+            {
+                throw new ArgumentNullException(nameof(patient) + " ID can not be null on IdentityInsert");
+            }
+
+            try
+            {
+                await semaphoreSlim.WaitAsync();
+                Patient dbPatient = await _databaseContext.Patients.FindAsync(patient.ID);
+                if (dbPatient != null)
+                {
+                    throw new InvalidOperationException("Patient already exists!");
+                }
+
+                int result;
+                using (var transaction = _databaseContext.Database.BeginTransaction())
+                {
+
+                    //Hack the EF since dbset doesn't support identity insert
+                    //Get current ident for restorement later
+                    int ident = Convert.ToInt32(_databaseContext.Database.SqlQuery<decimal>("SELECT IDENT_CURRENT('[dbo].[Patients]')").FirstOrDefault());
+                    //reseed ident to patient we want to insert
+                    await _databaseContext.Database.ExecuteSqlCommandAsync($"DBCC CHECKIDENT('[dbo].[Patients]', RESEED, {patient.ID - 1})");
+                    _databaseContext.Patients.Add(patient);
+                    //reseed ident to previous state
+                    result = await _databaseContext.SaveChangesAsync();
+                    await _databaseContext.Database.ExecuteSqlCommandAsync($"DBCC CHECKIDENT('[dbo].[Patients]', RESEED, {ident})");
+                    transaction.Commit();
+                }
+                return result;
+            }
+            finally { semaphoreSlim.Release(); }
         }
 
         public async Task<int> DeletePatientAsync(int id)
         {
-            await semaphoreSlim.WaitAsync();
-            Patient patient = await _databaseContext.Patients.FindAsync(id);
-            if (patient != null)
+            try
             {
-                _databaseContext.Patients.Remove(patient);
-            }
-            else
-            {
-                throw new KeyNotFoundException($"Patient with id: {id} doesn't exist!");
-            }
+                await semaphoreSlim.WaitAsync();
+                Patient patient = await _databaseContext.Patients.FindAsync(id);
+                if (patient != null)
+                {
+                    _databaseContext.Patients.Remove(patient);
+                }
+                else
+                {
+                    throw new KeyNotFoundException($"Patient with id: {id} doesn't exist!");
+                }
 
-            var result = await _databaseContext.SaveChangesAsync();
-            semaphoreSlim.Release();
-            return result;
+                return await _databaseContext.SaveChangesAsync();
+            }
+            finally { semaphoreSlim.Release(); }            
         }
-        
+
         public async Task<int> PurgePatientsAsync()
         {
-            await semaphoreSlim.WaitAsync();
-            _databaseContext.Patients.RemoveRange(_databaseContext.Patients);
-
-            var result = await _databaseContext.SaveChangesAsync();
-            return result;
+            try 
+            {
+                await semaphoreSlim.WaitAsync();
+                _databaseContext.Patients.RemoveRange(_databaseContext.Patients);
+                return await _databaseContext.SaveChangesAsync();
+            }
+            finally { semaphoreSlim.Release(); }
         }
     }
 }

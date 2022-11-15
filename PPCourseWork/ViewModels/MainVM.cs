@@ -206,7 +206,6 @@ namespace PPCourseWork.ViewModels
             {
                 try
                 {
-                    List<Task> dbWriteTasks = new List<Task>();
                     using (StreamReader reader = File.OpenText(LoadPath))
                     {
                         string line;
@@ -221,10 +220,9 @@ namespace PPCourseWork.ViewModels
                             {
                                 continue;
                             }
-                            dbWriteTasks.Add(this._patientService.AddOrUpdatePatientAsync(patient, false));
+                            await _patientService.AddOrUpdatePatientAsync(patient, false);
                         }
                     }
-                    await Task.WhenAll(dbWriteTasks);
                     System.Windows.MessageBox.Show("Import finished successfully!");
                 } catch (Exception ex)
                 {
