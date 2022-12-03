@@ -119,9 +119,9 @@ namespace PPCourseWork.ViewModels
                 var patient_task = _patientService.GetPatientsByNameAsync(SearchName);
                 PatientSearchResults = new ObservableCollection<Patient>(await patient_task);
             }
-            catch
+            catch (Exception e)
             {
-
+                System.Windows.MessageBox.Show(e.Message);
             }
         }
         public async Task LoadAllPatients()
@@ -130,9 +130,9 @@ namespace PPCourseWork.ViewModels
             {
                 PatientSearchResults = new ObservableCollection<Patient>(await _patientService.GetAllPatientsAsync());
             }
-            catch
+            catch (Exception e)
             {
-
+                System.Windows.MessageBox.Show(e.Message);
             }
         }
         public async Task AddUser()
@@ -142,96 +142,81 @@ namespace PPCourseWork.ViewModels
         }
         public async Task DeleteUser()
         {
-            await this._patientService.DeletePatientAsync(DelID);
+            try
+            {
+                await this._patientService.DeletePatientAsync(DelID);
+                System.Windows.MessageBox.Show($"Deleted patient with ID:{DelID}");
+            } catch (Exception e)
+            {
+                System.Windows.MessageBox.Show(e.Message);
+            }
         }
         public async Task MakeAnalisys()
         {
             this.AnalisysItems = new ObservableCollection<AnalisysItem>();
 
-            //TODO Separate into Get 100 records DB and pass task to AddCase task
-            foreach (var patient in await this._patientService.GetAllPatientsAsync())
+            try
             {
-                bool year_exists = false;
-                for(int index = 0; index < AnalisysItems.Count; index++)
+
+                //TODO Separate into Get 100 records DB and pass task to AddCase task
+                foreach (var patient in await this._patientService.GetAllPatientsAsync())
                 {
-                    if (AnalisysItems[index].Year == patient.BirthDate.Year)
+                    bool year_exists = false;
+                    for (int index = 0; index < AnalisysItems.Count; index++)
                     {
-                        AnalisysItems[index].Cases++;
-                        year_exists = true;
-                        break;
+                        if (AnalisysItems[index].Year == patient.BirthDate.Year)
+                        {
+                            AnalisysItems[index].Cases++;
+                            year_exists = true;
+                            break;
+                        }
+                    }
+                    if (!year_exists)
+                    {
+                        //TODO when into separate task, add to local array
+                        AnalisysItems.Add(new AnalisysItem(patient.BirthDate.Year));
                     }
                 }
-                if (!year_exists) 
-                {
-                    //TODO when into separate task, add to local array
-                    AnalisysItems.Add(new AnalisysItem(patient.BirthDate.Year));
-                }
+            } catch (Exception e)
+            {
+                System.Windows.MessageBox.Show(e.Message);
             }
 
             //TODO Concat all Tasks' results into AnalisysItems
         }
         public async Task ExportCSV()
         {
-            if(Directory.Exists(ExportPath))
+            try
             {
-                if (ExportPath[ExportPath.Length-1] != '\\')
-                {
-                    ExportPath += '\\';
-                }
-                string fileName = "PatientExport" + DateTime.Now.Year + "_" + DateTime.Now.Month
-                    + "_" + DateTime.Now.Day + "_" + DateTime.Now.Hour + "-" + DateTime.Now.Minute +
-                    "-" + DateTime.Now.Second + ".csv";
-                
                 var patients = await this._patientService.GetAllPatientsAsync();
-
-                //TODO change delimiter from hardcoded
-                string csv = String.Join("\n", await patients.Select(x => x.ToString(',')).ToAsyncEnumerable().ToListAsync());
-                var encodedText = Encoding.UTF8.GetBytes(csv);
-
-                using (FileStream sourceStream = new FileStream(ExportPath + fileName,
-                    FileMode.Append, FileAccess.Write, FileShare.None,
-                    bufferSize: 4096, useAsync: true))
-                {
-                    await sourceStream.WriteAsync(encodedText, 0, encodedText.Length);
-                    System.Windows.MessageBox.Show("Database exported");
-                };
-            } else
+                await PatientCSVHelper.ExportCSV(ExportPath, patients);
+                System.Windows.MessageBox.Show("Succesful export!");
+            } catch (Exception e)
             {
-                System.Windows.MessageBox.Show("Path doesn't exist!");
+                System.Windows.MessageBox.Show(e.Message);
             }
         }
         public async Task LoadCSV()
         {
-            if (File.Exists(LoadPath))
-            {
-                try
-                {
-                    using (StreamReader reader = File.OpenText(LoadPath))
-                    {
-                        string line;
-                        Patient patient;
-                        var skipSameID = System.Windows.MessageBox.Show("Do you want to skip records with the same ID (Yes), " +
-                            "or modify them, if there are differences(No)", "Skip records", System.Windows.MessageBoxButton.YesNo);
 
-                        while ((line = await reader.ReadLineAsync()) != null)
-                        {
-                            patient = new Patient(line, ','); //TODO change delimiter from hardcoded
-                            if (skipSameID == System.Windows.MessageBoxResult.Yes && await _patientService.PatientIdExistsAsync(patient.ID))
-                            {
-                                continue;
-                            }
-                            await _patientService.AddOrUpdatePatientAsync(patient, false);
-                        }
-                    }
-                    System.Windows.MessageBox.Show("Import finished successfully!");
-                } catch (Exception ex)
-                {
-                    System.Windows.MessageBox.Show(ex.Message);
-                }
-            } else
+            try
             {
-                System.Windows.MessageBox.Show("File Doesn't Exist!");
+                var loadFromCSVTask = PatientCSVHelper.LoadCSV(LoadPath);
+
+                bool DontUseFileID = System.Windows.MessageBox.Show("Do you want to skip records with the same ID (Yes), " +
+                    "or modify them, if there are differences(No)", "Skip records", System.Windows.MessageBoxButton.YesNo) == MessageBoxResult.No;
+
+                foreach (Patient patient in await loadFromCSVTask)
+                {
+                    await _patientService.AddOrUpdatePatientAsync(patient, DontUseFileID);
+                }
+
+                System.Windows.MessageBox.Show("Import finished successfully!");
+            } catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(ex.Message);
             }
+            
         }
         public async Task PurgeDB()
         {
