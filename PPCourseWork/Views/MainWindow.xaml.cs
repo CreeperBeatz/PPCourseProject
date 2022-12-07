@@ -21,13 +21,18 @@ namespace PPCourseWork
     /// </summary>
     public partial class MainWindow : Window
     {
+        Regex regex = new Regex("[^0-9]+");
         public MainWindow()
         {
             InitializeComponent();
         }
         private void IDSearchBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
         {
-            Regex regex = new Regex("[^0-9]+");
+            e.Handled = regex.IsMatch(e.Text);
+        }
+
+        private void TextBox_PreviewTextInput(object sender, TextCompositionEventArgs e)
+        {
             e.Handled = regex.IsMatch(e.Text);
         }
     }
