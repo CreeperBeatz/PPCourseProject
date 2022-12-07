@@ -96,7 +96,7 @@
                             will be loaded. If you want to reset all patients, you should purge
                             (delete) contents from the Database. This action is irreversable!
                             When exporting the database, the file name is automatically generated.
-                            
+
                         </TextBlock>
                     </StackPanel>
                 </Grid>
@@ -104,11 +104,12 @@
             <TabItem Header="Add / Delete Patients" >
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="20*"/>
-                        <ColumnDefinition Width="60*"/>
-                        <ColumnDefinition Width="20*"/>
+                        <ColumnDefinition Width="159*"/>
+                        <ColumnDefinition Width="58*"/>
+                        <ColumnDefinition Width="418*"/>
+                        <ColumnDefinition Width="159*"/>
                     </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="1">
+                    <StackPanel Grid.Column="1" Grid.ColumnSpan="2">
                         <Label Content="Name"/>
                         <TextBox x:Name="AddPatientNameTextBox" Text="{Binding AddName}"/>
                         <Label Content="Birth Date"/>
@@ -118,7 +119,7 @@
                         <Button Content="Add Patient" Command="{Binding AddUserCommand}"/>
                         <Line Stroke="Black" StrokeThickness="5" Margin="10" X1="0" Y1="0" Y2="0" X2="1000"/>
                         <Label Content="Delete Patient by ID"/>
-                        <TextBox Text="{Binding DelID}"/>
+                        <TextBox Text="{Binding DelID}" PreviewTextInput="TextBox_PreviewTextInput"/>
                         <Button Content="Delete Patient" Command="{Binding DeleteUserCommand}"/>
                     </StackPanel>
                 </Grid>

@@ -137,8 +137,15 @@ namespace PPCourseWork.ViewModels
         }
         public async Task AddUser()
         {
-            Patient patient = new Patient(AddName, AddBirthDate, AddIsCase);
-            await this._patientService.AddOrUpdatePatientAsync(patient);
+            try
+            {
+                Patient patient = new Patient(AddName, AddBirthDate, AddIsCase);
+                await this._patientService.AddOrUpdatePatientAsync(patient);
+            }
+            catch (Exception e)
+            {
+                System.Windows.MessageBox.Show(e.Message);
+            }
         }
         public async Task DeleteUser()
         {
@@ -201,6 +208,10 @@ namespace PPCourseWork.ViewModels
 
             try
             {
+                if (!LoadPath.EndsWith(".csv"))
+                {
+                    throw new ArgumentException("File is not .csv!");
+                }
                 var loadFromCSVTask = PatientCSVHelper.LoadCSV(LoadPath);
 
                 bool DontUseFileID = System.Windows.MessageBox.Show("Do you want to skip records with the same ID (Yes), " +
