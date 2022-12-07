@@ -20,24 +20,6 @@ namespace PPCourseWork.DAL
             _databaseContext.Patients.Any();
         }
 
-        public async Task<int> AddPatient(Patient patient)
-        {
-            await semaphoreSlim.WaitAsync();
-            _databaseContext.Patients.Add(patient);
-            var result = await _databaseContext.SaveChangesAsync();
-            semaphoreSlim.Release();
-            return result;
-        }
-
-        /*
-        public async Task<int> UpdatePatients(IEnumerable<Patient> patients)
-        {
-            // Currently Unoptimized, consider a better approach
-            _databaseContext.Patients.RemoveRange(_databaseContext.Patients);
-            _databaseContext.Patients.AddRange(patients);
-            return await _databaseContext.SaveChangesAsync();
-        }*/
-
         public async Task<Patient> GetPatientByIDAsync(int id)
         {
             try
